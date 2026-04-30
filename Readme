@@ -1,0 +1,262 @@
+# Ultrasound LMA Macro — Fiji/ImageJ
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Fiji%20%2F%20ImageJ%201.x-green)](https://fiji.sc/)
+[![Version](https://img.shields.io/badge/version-3.1.0-blue)](CHANGELOG.md)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXX)
+
+> A semi-automated Fiji/ImageJ macro for measuring **Longissimus dorsi muscle area (LMA)**, subcutaneous fat thickness, and muscle depth from ultrasound images — keyboard-driven, no fixed image naming required.
+
+Developed as part of a precision livestock technology research pipeline (UESPI / UNIVASF / UIUC). Applicable to any ruminant species with ultrasound images of the *m. Longissimus dorsi*.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Workflow](#workflow)
+- [Metadata and Output](#metadata-and-output)
+- [FAQ](#faq)
+- [Contributing](#contributing)
+- [Citation](#citation)
+- [License](#license)
+
+---
+
+## Features
+
+| Feature | Details |
+|---------|---------|
+| 🗂️ Flexible metadata | No filename pattern required — enter Subject, Group, and Replicate freely at each session |
+| 📐 Scale calibration | Draw any reference line, enter its real-world length and unit (cm / mm / in) |
+| 🫀 LMA measurement | Polygon or freehand ROI → area, perimeter, circularity |
+| ✂️ Spline smoothing | Optional contour regularization via cubic spline fitting |
+| 📌 ROI Manager | Save traced contours for review and export |
+| 🔬 Fat thickness | Three subcutaneous fat measurements + automatic mean |
+| 📏 Muscle depth | Dorsal–ventral anatomical depth of the *m. Longissimus dorsi* |
+| 💾 Structured CSV | One file per Group value, auto-header, one row per image |
+| ⌨️ Keyboard-only | F1 – F9, no menus needed during analysis |
+| 🛡️ Guard rails | Blocks measurement steps if scale is not calibrated |
+| 🖥️ Cross-platform | Windows, macOS, and Linux |
+
+---
+
+## Requirements
+
+- [Fiji](https://fiji.sc/) — any recent release (ImageJ 1.x bundled)
+- No additional plugins required
+
+---
+
+## Installation
+
+**Method 1 — Current session only**
+
+1. Download [`LMA_Macro.ijm`](LMA_Macro.ijm)
+2. In Fiji: **Plugins → Macros → Install…** → select the file
+
+**Method 2 — Persistent (auto-loads with Fiji)**
+
+Copy `LMA_Macro.ijm` to your Fiji `macros/` folder and restart Fiji:
+
+| OS | Path |
+|----|------|
+| Windows | `C:\Fiji.app\macros\` |
+| macOS | `/Applications/Fiji.app/macros/` |
+| Linux | `~/Fiji.app/macros/` |
+
+---
+
+## Workflow
+
+### Keyboard shortcuts
+
+| Key | Command | Action |
+|-----|---------|--------|
+| **F1** | Init | Open metadata dialog, reset session |
+| **F2** | Set Scale | Calibrate scale from a drawn reference line |
+| **F3** | Measure LMA | Trace muscle ROI → area, perimeter, circularity |
+| **F4** | Measure Fat | Three subcutaneous fat thickness measurements |
+| **F5** | Measure Depth | Dorsal–ventral muscle depth measurement |
+| **F6** | Save Results | Append row to CSV, reset for next image |
+| **F7** | Status | Show current session state |
+| **F8** | Reset | Clear measurements (saved CSVs untouched) |
+| **F9** | Open Folder | Open CSV output folder in file manager |
+
+### Step-by-step
+
+```
+Open image
+     │
+     ▼
+F1 — Init
+     Dialog opens with three editable fields:
+       Subject / Animal ID        →  "Animal01", "Sheep_15", "Ewe07" ...
+       Group / Session / Treatment →  "Control", "Session02", "Week04" ...
+       Replicate / Scan           →  "1", "Rep2" ...
+     If the filename matches a common pattern, fields are pre-filled.
+     Edit as needed — any text is accepted.
+     │
+     ▼
+F2 — Set Scale
+     Draw a line over a reference of known length.
+     Enter the real-world length and choose the unit (cm / mm / in).
+     │
+     ▼
+F3 — Measure LMA
+     Trace the Longissimus dorsi contour (Polygon Selection recommended).
+     Optional: spline smoothing · save ROI to ROI Manager.
+     │
+     ▼
+F4 — Measure Fat  (×3 prompts)
+     Draw three perpendicular lines across the subcutaneous fat layer.
+     │
+     ▼
+F5 — Measure Depth
+     Draw one line from the dorsal to the ventral muscle border.
+     │
+     ▼
+F6 — Save Results
+     Row appended to CSV · session cleared · open next image → F1
+```
+
+### Recovering from mistakes
+
+| Situation | Solution |
+|-----------|----------|
+| Wrong LMA tracing | **F8** → re-trace → **F3** |
+| Wrong fat measurement | **F8** → **F4** (fat always resets at F4 start) |
+| Wrong depth | **F8** → **F5** |
+| Wrong row already saved | Open the CSV in a text editor and delete that row |
+
+---
+
+## Metadata and Output
+
+### The metadata dialog (F1)
+
+Every image starts with a fully editable dialog:
+
+```
+┌──────────────────────────────────────────────────┐
+│  Image Metadata  —  LMA Macro v3.1.0             │
+│  File: A1C1_1.jpg                                │
+│                                                  │
+│  Subject / Animal ID         [ Animal_1        ] │
+│  Group / Session / Treatment [ Collection_01   ] │
+│  Replicate / Scan            [ 1               ] │
+└──────────────────────────────────────────────────┘
+```
+
+Fields are pre-filled when the filename matches a recognizable pattern, but always editable. There is no required naming convention.
+
+### Adapting to your experiment
+
+| Study design | Subject | Group | Replicate |
+|-------------|---------|-------|-----------|
+| Repeated collections | `Animal_05` | `Collection_2` | `1` |
+| Diet treatment trial | `Sheep_12` | `HighProtein` | `Rep1` |
+| Breed comparison | `Animal_03` | `Dorper` | `2` |
+| Longitudinal | `Ewe_07` | `Week04` | `1` |
+
+### Output files
+
+One CSV is created per unique **Group** value:
+
+```
+lma_Collection_01.csv
+lma_Control.csv
+lma_HighProtein.csv
+lma_results.csv        ← if Group is left blank
+```
+
+### CSV columns
+
+| Column | Unit | Description |
+|--------|------|-------------|
+| `image_file` | — | Original filename (captured at Init) |
+| `subject` | — | Subject / Animal ID |
+| `group` | — | Group / Session / Treatment |
+| `replicate` | — | Replicate / Scan number |
+| `lma_area_cm2` | scale unit² | Longissimus dorsi cross-sectional area |
+| `lma_perimeter_cm` | scale unit | Muscle contour perimeter |
+| `lma_circularity` | 0–1 | Shape circularity (1 = perfect circle) |
+| `fat1_mm` – `fat3_mm` | scale unit | Individual fat thickness measurements |
+| `fat_mean_mm` | scale unit | Mean subcutaneous fat thickness |
+| `muscle_depth_mm` | scale unit | Anatomical depth, dorsal–ventral axis |
+
+> Column names use `cm` / `mm` by convention. Actual values are in whichever unit you set at F2.
+
+---
+
+## FAQ
+
+**Can I use this for cattle, goats, or other species?**  
+Yes. The macro measures whatever you trace and accepts any experimental design.
+
+**My images have a different naming convention — will it work?**  
+Yes. Any filename is accepted. The F1 dialog may or may not pre-fill the fields depending on the pattern, but you can always type manually.
+
+**What if a CSV value shows `-999999`?**  
+That is the internal sentinel for "not measured." Delete that row, re-open the image, and start from F1.
+
+**How do I reset the output folder?**  
+Run this snippet via **Plugins → Macros → Evaluate…**:
+```javascript
+call("ij.Prefs.set", "lma.out_dir", "");
+```
+
+**Does it work with DICOM stacks?**  
+Only on the currently active frame. Navigate to the target frame before pressing F1.
+
+**Why are the column names `cm` / `mm` if I can choose any unit?**  
+The column names are fixed for CSV consistency. The values reflect whichever unit you set at F2.
+
+---
+
+## Contributing
+
+Bug reports and pull requests are welcome.  
+Please open an [issue](https://github.com/YOUR_USERNAME/ultrasound-lma-macro/issues) before submitting large changes.
+
+---
+
+## Citation
+
+If you use this macro in a publication, dataset, or derivative tool, please cite:
+
+### BibTeX
+
+```bibtex
+@software{araujo_lma_macro_2025,
+  author    = {Araujo, Cintia},
+  title     = {{Ultrasound LMA Macro for Fiji/ImageJ}},
+  version   = {3.1.0},
+  year      = {2025},
+  publisher = {GitHub / Zenodo},
+  url       = {https://github.com/YOUR_USERNAME/ultrasound-lma-macro},
+  doi       = {10.5281/zenodo.XXXXXXX}
+}
+```
+
+### APA 7th
+
+> Araujo, C. (2025). *Ultrasound LMA Macro for Fiji/ImageJ* (v3.1.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX
+
+### Plain text
+
+> Araujo, C. (2025). Ultrasound LMA Macro for Fiji/ImageJ (Version 3.1.0). Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+The macro runs on [Fiji](https://fiji.sc/) (GPL-2.0) and [ImageJ](https://imagej.net/) (public domain). User-authored `.ijm` macros are not derived works of ImageJ source code and may be distributed under any license of the author's choosing.
+
+---
+
+*Developed at UESPI Campus Corrente · UNIVASF Graduate Program in Animal Science · University of Illinois Urbana-Champaign*
